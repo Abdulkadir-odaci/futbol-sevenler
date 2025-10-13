@@ -1,0 +1,293 @@
+/* Custom CSS Styles for Futbol Sevenler Attendance Tracker */
+
+/* Main Layout */
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    max-width: 1200px;
+}
+
+/* Header Styles */
+.main-header {
+    font-size: 2.5rem;
+    color: #1f77b4;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.sub-header {
+    font-size: 1.5rem;
+    color: #333;
+    margin: 1.5rem 0 1rem 0;
+    border-bottom: 2px solid #1f77b4;
+    padding-bottom: 0.5rem;
+}
+
+/* Statistics Cards */
+.stats-card {
+    background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+    padding: 1.5rem;
+    border-radius: 15px;
+    border-left: 5px solid #1f77b4;
+    margin: 1rem 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+/* Attendance Status Styles */
+.attendance-yes {
+    color: #28a745;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.attendance-maybe {
+    color: #ffc107;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.attendance-no {
+    color: #dc3545;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Button Styles */
+.stButton > button {
+    background: linear-gradient(135deg, #1f77b4 0%, #0d5aa7 100%);
+    color: white;
+    border-radius: 25px;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(31, 119, 180, 0.3);
+}
+
+.stButton > button:hover {
+    background: linear-gradient(135deg, #0d5aa7 0%, #1f77b4 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(31, 119, 180, 0.4);
+}
+
+.stButton > button:active {
+    transform: translateY(0);
+}
+
+/* Sidebar Styles */
+.sidebar .sidebar-content {
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.5rem;
+    border-radius: 15px;
+    margin: 1rem 0;
+    border: 1px solid #dee2e6;
+}
+
+.sidebar .stTextArea > div > div > textarea {
+    border-radius: 10px;
+    border: 2px solid #dee2e6;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+/* Metric Cards */
+div[data-testid="metric-container"] {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+}
+
+div[data-testid="metric-container"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Data Table Styles */
+.stDataFrame {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Charts Container */
+.chart-container {
+    background: white;
+    border-radius: 15px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin: 1rem 0;
+}
+
+/* File Uploader */
+.stFileUploader > div {
+    border-radius: 10px;
+    border: 2px dashed #1f77b4;
+    padding: 2rem;
+    text-align: center;
+    background: rgba(31, 119, 180, 0.05);
+    transition: all 0.3s ease;
+}
+
+.stFileUploader > div:hover {
+    background: rgba(31, 119, 180, 0.1);
+    border-color: #0d5aa7;
+}
+
+/* Welcome Screen */
+.welcome-container {
+    text-align: center;
+    padding: 3rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 20px;
+    margin: 2rem 0;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.welcome-container h2 {
+    color: #1f77b4;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+}
+
+.welcome-container p {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.feature-list {
+    text-align: left;
+    display: inline-block;
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin: 1rem;
+}
+
+.feature-list h3 {
+    color: #1f77b4;
+    margin-bottom: 1rem;
+}
+
+.feature-list ol, .feature-list ul {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+/* Response Badges */
+.response-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0.2rem;
+}
+
+.badge-yes {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-maybe {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-no {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Loading Animation */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+/* Toast Notifications */
+.stAlert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Export Section */
+.export-section {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin: 2rem 0;
+    border: 1px solid #2196f3;
+}
+
+/* Quick Actions */
+.quick-actions {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin: 1rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-header {
+        font-size: 2rem;
+    }
+    
+    .feature-list {
+        margin: 0.5rem 0;
+        padding: 1rem;
+    }
+    
+    .welcome-container {
+        padding: 2rem 1rem;
+    }
+    
+    .stats-card {
+        margin: 0.5rem 0;
+        padding: 1rem;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .stats-card {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+    }
+    
+    .welcome-container {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+    }
+    
+    .feature-list {
+        background: #34495e;
+        color: white;
+    }
+}
