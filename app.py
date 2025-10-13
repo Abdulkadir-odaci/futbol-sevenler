@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from utils import RegistrationManager
+import json
+import os
+from pathlib import Path
 
 st.set_page_config(
     page_title="Futbol Sevenler",
@@ -71,13 +74,49 @@ def get_player_status(position, total_count):
     else:
         return 'reserve'
 
+def load_players():
+    """JSON dosyasından oyuncuları yükle"""
+    try:
+        data_file = Path("players_data.json")
+        if data_file.exists():
+            with open(data_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        st.error(f"Veri yükleme hatası: {e}")
+    return []
+
+def save_players(players):
+    """Oyuncuları JSON dosyasına kaydet"""
+    try:
+        with open("players_data.json", 'w', encoding='utf-8') as f:
+            json.dump(players, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        st.error(f"Veri kaydetme hatası: {e}")
+        return False
+
 def main():
     st.markdown('<h1 class="main-header">⚽ Futbol Sevenler</h1>', unsafe_allow_html=True)
     
     if 'registration_manager' not in st.session_state:
         st.session_state.registration_manager = RegistrationManager()
+    
+    # İlk açılışta JSON'dan yükle
     if 'registered_players' not in st.session_state:
-        st.session_state.registered_players = []
+        st.session_state.registered_players = load_players()
+    
+    # Hafta başında otomatik temizleme (Pazartesi 00:00)
+    if 'last_check' not in st.session_state:
+        st.session_state.last_check = datetime.now().date()
+    
+    today = datetime.now().date()
+    if today != st.session_state.last_check:
+        st.session_state.last_check = today
+        # Pazartesi günü listeyi temizle
+        if datetime.now().weekday() == 0:  # 0 = Pazartesi
+            st.session_state.registered_players = []
+            save_players([])
+            st.info("📋 Yeni hafta başladı! Liste temizlendi.")
     
     deadline = datetime.now().replace(hour=13, minute=0, second=0, microsecond=0)
     is_deadline_passed = datetime.now().weekday() == 6 and datetime.now() > deadline
@@ -114,7 +153,9 @@ def main():
                     )
                     if result['success']:
                         st.session_state.registered_players = result['player_list']
-                        st.success(f"✅ {result['message']}")
+                        # JSON'a kaydet
+                        if save_players(st.session_state.registered_players):
+                            st.success(f"✅ {result['message']}")
                         st.rerun()
                     else:
                         st.error(f"❌ {result['message']}")
@@ -138,6 +179,8 @@ def main():
                         if p['name'] != player_to_remove
                     ]
                     st.session_state.registration_manager.reorder_positions(st.session_state.registered_players)
+                    # JSON'a kaydet
+                    save_players(st.session_state.registered_players)
                     st.success(f"✅ {player_to_remove} silindi!")
                     st.rerun()
     
