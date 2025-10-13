@@ -122,7 +122,7 @@ def main():
     is_deadline_passed = datetime.now().weekday() == 6 and datetime.now() > deadline
     
     # Test aşaması uyarısı - Kırmızı not
-    st.error("⚠️ **TEST AŞAMASI** - Cuma gününden itibaren gerçek oylama buradan olacaktır! Oylama pazar saat 13:00 dan sonra kitlenicek ve kullanicilar ekleme yapamayacak. Ektra oneri ve fikir icin waatsaptan bildiriniz.")
+    st.error("⚠️ **TEST AŞAMASI** - Cuma gününden itibaren gerçek oylama buradan olacaktır! Oylama pazar saat 13:00 dan sonra kitlenicek ve kullanicilar ekleme yapamayacak. Toplam sayi tek sayi ise, oyuncu beklemede gozukecek ve sayi cift olunca listeye obur oyuncu ile beraber dahil olucak. Ektra oneri ve fikir icin waatsaptan bildiriniz.")
     
     if is_deadline_passed:
         st.error("🚫 KAYIT SÜRESİ DOLDU! Kayıtlar Pazar saat 13:00'a kadar alınır. Maç saat 20:00'de başlayacak.")
