@@ -121,6 +121,9 @@ def main():
     deadline = datetime.now().replace(hour=13, minute=0, second=0, microsecond=0)
     is_deadline_passed = datetime.now().weekday() == 6 and datetime.now() > deadline
     
+    # Test aşaması uyarısı - Kırmızı not
+    st.error("⚠️ **TEST AŞAMASI** - Cuma gününden itibaren gerçek oylama buradan olacaktır!")
+    
     if is_deadline_passed:
         st.error("🚫 KAYIT SÜRESİ DOLDU! Kayıtlar Pazar saat 13:00'a kadar alınır. Maç saat 20:00'de başlayacak.")
     elif datetime.now().weekday() == 6:
@@ -243,7 +246,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.info("👥 Henüz kayıt yapan yok reis.")
+        st.info("👥 Henüz kayıt yapan yok suan icin yok.")
 
 if __name__ == "__main__":
     main()
