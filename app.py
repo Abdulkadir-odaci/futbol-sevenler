@@ -105,18 +105,17 @@ def main():
     if 'registered_players' not in st.session_state:
         st.session_state.registered_players = load_players()
     
-    # Hafta başında otomatik temizleme (Pazartesi 00:00)
-    if 'last_check' not in st.session_state:
-        st.session_state.last_check = datetime.now().date()
+    # Hafta başında otomatik temizleme (Pazartesi 00:00) - Sadece bir kez
+    if 'last_cleanup_date' not in st.session_state:
+        st.session_state.last_cleanup_date = None
     
     today = datetime.now().date()
-    if today != st.session_state.last_check:
-        st.session_state.last_check = today
-        # Pazartesi günü listeyi temizle
-        if datetime.now().weekday() == 0:  # 0 = Pazartesi
-            st.session_state.registered_players = []
-            save_players([])
-            st.info("📋 Yeni hafta başladı! Liste temizlendi.")
+    # Pazartesi ve daha önce temizlenmediyse
+    if datetime.now().weekday() == 0 and st.session_state.last_cleanup_date != today:
+        st.session_state.registered_players = []
+        save_players([])
+        st.session_state.last_cleanup_date = today
+        st.info("📋 Yeni hafta başladı! Liste temizlendi.")
     
     deadline = datetime.now().replace(hour=13, minute=0, second=0, microsecond=0)
     is_deadline_passed = datetime.now().weekday() == 6 and datetime.now() > deadline
