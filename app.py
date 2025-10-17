@@ -214,38 +214,115 @@ def main():
     with col4:
         st.metric("Yedek 📝", reserve_count)
     
-    # Oyuncu listesi (varsa)
-    if st.session_state.registered_players:
-        st.markdown("---")
-        st.subheader("👥 Kayıtlı Oyuncular")
+    st.markdown("---")
+    
+    # Tabs for player list and team selection
+    tab1, tab2 = st.tabs(["👥 Oyuncu Listesi", "🟦 Takım Seçme"])
+    
+    # TAB 1: Oyuncu Listesi
+    with tab1:
+        if st.session_state.registered_players:
+            st.subheader("👥 Kayıtlı Oyuncular")
+            
+            # Single list view with status indicators
+            for player in st.session_state.registered_players:
+                status = get_player_status(player['position'], total_registered)
+                team = player.get('team', '⚪')  # Get team, default to white circle
+                
+                if status == 'playing':
+                    status_emoji = "✅"
+                    status_text = "Oynuyor"
+                    card_color = "#d4edda"
+                elif status == 'waiting':
+                    status_emoji = "⏳"
+                    status_text = "Bekliyor"
+                    card_color = "#fff3cd"
+                else:  # reserve
+                    status_emoji = "📝"
+                    status_text = "Yedek"
+                    card_color = "#f8d7da"
+                
+                st.markdown(f"""
+                <div class="player-card" style="background-color: {card_color}; padding: 0.8rem; margin: 0.5rem 0; border-radius: 10px; border-left: 4px solid {'#28a745' if status == 'playing' else '#ffc107' if status == 'waiting' else '#dc3545'};">
+                    <strong style="font-size: 1.1rem;">{player['position']}. {player['name']} {team}</strong>
+                    <span style="float: right; font-weight: bold;">{status_emoji} {status_text}</span>
+                    <br>
+                    <small style="color: #666;">📅 {player['timestamp']}</small>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("👥 Henüz kayıt yapan yok suan icin yok.")
+    
+    # TAB 2: Takım Seçimi
+    with tab2:
+        st.subheader("🟦🟨 Takım Seçimi")
+        st.markdown("Adınızı seçin ve hangi takımda oynamak istediğinizi belirtin")
         
-        # Single list view with status indicators
-        for player in st.session_state.registered_players:
-            status = get_player_status(player['position'], total_registered)
-            
-            if status == 'playing':
-                status_emoji = "✅"
-                status_text = "Oynuyor"
-                card_color = "#d4edda"
-            elif status == 'waiting':
-                status_emoji = "⏳"
-                status_text = "Bekliyor"
-                card_color = "#fff3cd"
-            else:  # reserve
-                status_emoji = "📝"
-                status_text = "Yedek"
-                card_color = "#f8d7da"
-            
-            st.markdown(f"""
-            <div class="player-card" style="background-color: {card_color}; padding: 0.8rem; margin: 0.5rem 0; border-radius: 10px; border-left: 4px solid {'#28a745' if status == 'playing' else '#ffc107' if status == 'waiting' else '#dc3545'};">
-                <strong style="font-size: 1.1rem;">{player['position']}. {player['name']}</strong>
-                <span style="float: right; font-weight: bold;">{status_emoji} {status_text}</span>
-                <br>
-                <small style="color: #666;">📅 {player['timestamp']}</small>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.info("👥 Henüz kayıt yapan yok suan icin yok.")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            selected_player = st.selectbox(
+                "Oyuncu seç",
+                ["Seçiniz..."] + [p['name'] for p in st.session_state.registered_players],
+                label_visibility="collapsed",
+                key="team_select"
+            )
+        
+        with col2:
+            team_choice = st.selectbox(
+                "Takım seç",
+                ["⚪ Takımsız", "🟦 Mavi Takım", "🟨 Sarı Takım"],
+                label_visibility="collapsed",
+                key="team_choice"
+            )
+        
+        with col3:
+            if st.button("✅ Takım Seç", use_container_width=True):
+                if selected_player != "Seçiniz...":
+                    # Find player and update team
+                    for player in st.session_state.registered_players:
+                        if player['name'] == selected_player:
+                            if "Mavi" in team_choice:
+                                player['team'] = "🟦"
+                            elif "Sarı" in team_choice:
+                                player['team'] = "🟨"
+                            else:
+                                player['team'] = "⚪"
+                            break
+                    # Save to JSON
+                    save_players(st.session_state.registered_players)
+                    st.success(f"✅ {selected_player} {team_choice} seçildi!")
+                    st.rerun()
+                else:
+                    st.error("Lütfen bir oyuncu seçin!")
+        
+        # Takım özeti
+        st.markdown("---")
+        st.subheader("📊 Takım Özeti")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        blue_players = [p for p in st.session_state.registered_players if p.get('team') == '🟦']
+        yellow_players = [p for p in st.session_state.registered_players if p.get('team') == '🟨']
+        no_team = [p for p in st.session_state.registered_players if p.get('team') in ['⚪', None]]
+        
+        with col1:
+            st.metric("🟦 Mavi Takım", len(blue_players))
+            if blue_players:
+                for p in blue_players:
+                    st.write(f"  • {p['name']}")
+        
+        with col2:
+            st.metric("🟨 Sarı Takım", len(yellow_players))
+            if yellow_players:
+                for p in yellow_players:
+                    st.write(f"  • {p['name']}")
+        
+        with col3:
+            st.metric("⚪ Takımsız", len(no_team))
+            if no_team:
+                for p in no_team:
+                    st.write(f"  • {p['name']}")
 
 if __name__ == "__main__":
     main()

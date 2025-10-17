@@ -210,7 +210,8 @@ class RegistrationManager:
         new_player = {
             'name': name,
             'position': position,
-            'timestamp': timestamp
+            'timestamp': timestamp,
+            'team': '⚪'  # Default to no team
         }
         
         # Add to list
