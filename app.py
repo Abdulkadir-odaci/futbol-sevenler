@@ -95,6 +95,39 @@ def save_players(players):
         st.error(f"Veri kaydetme hatası: {e}")
         return False
 
+def backup_to_archive():
+    """Haftalık verileri arşive kaydet - VERİ SİLİNMEZ"""
+    try:
+        # Archive klasörü oluştur
+        archive_dir = Path("archive")
+        archive_dir.mkdir(exist_ok=True)
+        
+        # Aktif veriyi oku
+        data_file = Path("players_data.json")
+        if data_file.exists():
+            with open(data_file, 'r', encoding='utf-8') as f:
+                current_data = json.load(f)
+            
+            # Hafta numarası ile arşiv dosyası oluştur
+            week_num = datetime.now().isocalendar()[1]
+            year = datetime.now().year
+            archive_file = archive_dir / f"week_{year}_{week_num}.json"
+            
+            # Arşiv dosyasına kaydet
+            with open(archive_file, 'w', encoding='utf-8') as f:
+                archive_entry = {
+                    'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'week': week_num,
+                    'year': year,
+                    'players': current_data
+                }
+                json.dump(archive_entry, f, ensure_ascii=False, indent=2)
+            
+            return True
+    except Exception as e:
+        print(f"Arşiv hatası: {e}")
+        return False
+
 def main():
     st.markdown('<h1 class="main-header">⚽ Futbol Sevenler</h1>', unsafe_allow_html=True)
     
@@ -105,17 +138,22 @@ def main():
     if 'registered_players' not in st.session_state:
         st.session_state.registered_players = load_players()
     
-    # Hafta başında otomatik temizleme (Pazartesi 00:00) - Sadece bir kez
+    # Hafta başında otomatik backup ve temizleme (Pazartesi sabahı) - Sadece bir kez
     if 'last_cleanup_date' not in st.session_state:
         st.session_state.last_cleanup_date = None
     
     today = datetime.now().date()
     # Pazartesi ve daha önce temizlenmediyse
     if datetime.now().weekday() == 0 and st.session_state.last_cleanup_date != today:
+        # BACKUP AL - Veri silinmeden önce arşive kaydet
+        if backup_to_archive():
+            st.info("📦 Geçmiş hafta verisi arşivlendi ve korunuyor...")
+        
+        # Şimdi aktif listeyi temizle
         st.session_state.registered_players = []
         save_players([])
         st.session_state.last_cleanup_date = today
-        st.info("📋 Yeni hafta başladı! Liste temizlendi.")
+        st.success("✅ Yeni hafta başladı! Arşiv dosyada korunuyor.")
     
     deadline = datetime.now().replace(hour=13, minute=0, second=0, microsecond=0)
     is_deadline_passed = datetime.now().weekday() == 6 and datetime.now() > deadline

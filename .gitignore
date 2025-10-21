@@ -13,6 +13,7 @@ ENV/
 
 # Data files
 players_data.json
+archive/
 
 # IDE
 .vscode/
