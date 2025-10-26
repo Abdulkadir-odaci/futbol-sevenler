@@ -3,6 +3,207 @@ import pandas as pd
 from datetime import datetime
 from typing import List, Dict, Tuple
 import streamlit as st
+import sqlite3
+from pathlib import Path
+
+class DatabaseManager:
+    """SQLite Database Manager - Güvenli veri depolama"""
+    
+    def __init__(self, db_name: str = "futbol_sevenler.db"):
+        self.db_name = db_name
+        self.init_database()
+    
+    def init_database(self):
+        """Veritabanını başlat ve tabloları oluştur"""
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            
+            # Players tablosu
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS players (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    position INTEGER,
+                    timestamp TEXT,
+                    team TEXT DEFAULT '⚪',
+                    week INTEGER,
+                    year INTEGER,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Archive tablosu - geçmiş haftalardaki oyuncuları sakla
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS archive (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    position INTEGER,
+                    timestamp TEXT,
+                    team TEXT,
+                    week INTEGER,
+                    year INTEGER,
+                    archived_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"Database init hatası: {e}")
+    
+    def get_all_players(self) -> List[Dict]:
+        """Bu haftanın tüm oyuncularını getir"""
+        try:
+            conn = sqlite3.connect(self.db_name)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            week = datetime.now().isocalendar()[1]
+            year = datetime.now().year
+            
+            cursor.execute('''
+                SELECT id, name, position, timestamp, team 
+                FROM players 
+                WHERE week = ? AND year = ?
+                ORDER BY position ASC
+            ''', (week, year))
+            
+            rows = cursor.fetchall()
+            conn.close()
+            
+            return [dict(row) for row in rows]
+        except Exception as e:
+            print(f"Get players hatası: {e}")
+            return []
+    
+    def add_player(self, name: str, position: int, team: str = '⚪') -> bool:
+        """Yeni oyuncu ekle"""
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            
+            week = datetime.now().isocalendar()[1]
+            year = datetime.now().year
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            cursor.execute('''
+                INSERT INTO players (name, position, timestamp, team, week, year)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (name, position, timestamp, team, week, year))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.IntegrityError:
+            print(f"{name} zaten var!")
+            return False
+        except Exception as e:
+            print(f"Add player hatası: {e}")
+            return False
+    
+    def remove_player(self, name: str) -> bool:
+        """Oyuncu sil"""
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            
+            week = datetime.now().isocalendar()[1]
+            year = datetime.now().year
+            
+            cursor.execute('''
+                DELETE FROM players 
+                WHERE name = ? AND week = ? AND year = ?
+            ''', (name, week, year))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Remove player hatası: {e}")
+            return False
+    
+    def update_team(self, name: str, team: str) -> bool:
+        """Oyuncunun takımını güncelle"""
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            
+            week = datetime.now().isocalendar()[1]
+            year = datetime.now().year
+            
+            cursor.execute('''
+                UPDATE players 
+                SET team = ?
+                WHERE name = ? AND week = ? AND year = ?
+            ''', (team, name, week, year))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Update team hatası: {e}")
+            return False
+    
+    def archive_week(self) -> bool:
+        """Bu haftanın verisini arşive taşı"""
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            
+            week = datetime.now().isocalendar()[1]
+            year = datetime.now().year
+            
+            # Oyuncuları arşive kopyala
+            cursor.execute('''
+                INSERT INTO archive (name, position, timestamp, team, week, year)
+                SELECT name, position, timestamp, team, week, year 
+                FROM players 
+                WHERE week = ? AND year = ?
+            ''', (week, year))
+            
+            # Oyuncuları sil
+            cursor.execute('''
+                DELETE FROM players 
+                WHERE week = ? AND year = ?
+            ''', (week, year))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Archive hatası: {e}")
+            return False
+    
+    def update_positions(self) -> bool:
+        """Oyuncuların pozisyonlarını yeniden sırala"""
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            
+            week = datetime.now().isocalendar()[1]
+            year = datetime.now().year
+            
+            # Oyuncuları timestamp'e göre sırala ve yeni pozisyon ver
+            cursor.execute('''
+                SELECT id FROM players 
+                WHERE week = ? AND year = ?
+                ORDER BY timestamp ASC
+            ''', (week, year))
+            
+            rows = cursor.fetchall()
+            
+            for idx, row in enumerate(rows, 1):
+                cursor.execute('''
+                    UPDATE players SET position = ? WHERE id = ?
+                ''', (idx, row[0]))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Update positions hatası: {e}")
+            return False
 
 class WhatsAppParser:
     """Parser for WhatsApp chat messages to extract user information and responses."""

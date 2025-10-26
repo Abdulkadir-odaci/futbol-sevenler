@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from utils import RegistrationManager
+from utils import RegistrationManager, DatabaseManager
 import json
 import os
 from pathlib import Path
@@ -74,69 +74,19 @@ def get_player_status(position, total_count):
     else:
         return 'reserve'
 
-def load_players():
-    """JSON dosyasından oyuncuları yükle"""
-    try:
-        data_file = Path("players_data.json")
-        if data_file.exists():
-            with open(data_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-    except Exception as e:
-        st.error(f"Veri yükleme hatası: {e}")
-    return []
-
-def save_players(players):
-    """Oyuncuları JSON dosyasına kaydet"""
-    try:
-        with open("players_data.json", 'w', encoding='utf-8') as f:
-            json.dump(players, f, ensure_ascii=False, indent=2)
-        return True
-    except Exception as e:
-        st.error(f"Veri kaydetme hatası: {e}")
-        return False
-
-def backup_to_archive():
-    """Haftalık verileri arşive kaydet - VERİ SİLİNMEZ"""
-    try:
-        # Archive klasörü oluştur
-        archive_dir = Path("archive")
-        archive_dir.mkdir(exist_ok=True)
-        
-        # Aktif veriyi oku
-        data_file = Path("players_data.json")
-        if data_file.exists():
-            with open(data_file, 'r', encoding='utf-8') as f:
-                current_data = json.load(f)
-            
-            # Hafta numarası ile arşiv dosyası oluştur
-            week_num = datetime.now().isocalendar()[1]
-            year = datetime.now().year
-            archive_file = archive_dir / f"week_{year}_{week_num}.json"
-            
-            # Arşiv dosyasına kaydet
-            with open(archive_file, 'w', encoding='utf-8') as f:
-                archive_entry = {
-                    'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'week': week_num,
-                    'year': year,
-                    'players': current_data
-                }
-                json.dump(archive_entry, f, ensure_ascii=False, indent=2)
-            
-            return True
-    except Exception as e:
-        print(f"Arşiv hatası: {e}")
-        return False
-
 def main():
     st.markdown('<h1 class="main-header">⚽ Futbol Sevenler</h1>', unsafe_allow_html=True)
+    
+    # Database başlat
+    if 'db' not in st.session_state:
+        st.session_state.db = DatabaseManager()
     
     if 'registration_manager' not in st.session_state:
         st.session_state.registration_manager = RegistrationManager()
     
-    # İlk açılışta JSON'dan yükle
+    # İlk açılışta veritabanından yükle
     if 'registered_players' not in st.session_state:
-        st.session_state.registered_players = load_players()
+        st.session_state.registered_players = st.session_state.db.get_all_players()
     
     # Hafta başında otomatik backup ve temizleme (Pazartesi sabahı) - Sadece bir kez
     if 'last_cleanup_date' not in st.session_state:
@@ -145,15 +95,14 @@ def main():
     today = datetime.now().date()
     # Pazartesi ve daha önce temizlenmediyse
     if datetime.now().weekday() == 0 and st.session_state.last_cleanup_date != today:
-        # BACKUP AL - Veri silinmeden önce arşive kaydet
-        if backup_to_archive():
+        # ARCHIVE VE TEMİZLE - Veritabanında güvenli şekilde
+        if st.session_state.db.archive_week():
             st.info("📦 Geçmiş hafta verisi arşivlendi ve korunuyor...")
         
         # Şimdi aktif listeyi temizle
         st.session_state.registered_players = []
-        save_players([])
         st.session_state.last_cleanup_date = today
-        st.success("✅ Yeni hafta başladı! Arşiv dosyada korunuyor.")
+        st.success("✅ Yeni hafta başladı! Eski veriler arşivde kalıcı olarak korunuyor.")
     
     deadline = datetime.now().replace(hour=13, minute=0, second=0, microsecond=0)
     is_deadline_passed = datetime.now().weekday() == 6 and datetime.now() > deadline
@@ -187,18 +136,14 @@ def main():
         with col2:
             if st.button("📝 Kayıt", type="primary", use_container_width=True):
                 if player_name.strip():
-                    result = st.session_state.registration_manager.register_player(
-                        player_name.strip().title(), 
-                        st.session_state.registered_players
-                    )
-                    if result['success']:
-                        st.session_state.registered_players = result['player_list']
-                        # JSON'a kaydet
-                        if save_players(st.session_state.registered_players):
-                            st.success(f"✅ {result['message']}")
+                    name = player_name.strip().title()
+                    # Veritabanına ekle
+                    if st.session_state.db.add_player(name, len(st.session_state.registered_players) + 1):
+                        st.session_state.registered_players = st.session_state.db.get_all_players()
+                        st.success(f"✅ {name} kaydedildi!")
                         st.rerun()
                     else:
-                        st.error(f"❌ {result['message']}")
+                        st.error(f"❌ {name} zaten kayıtlı!")
                 else:
                     st.error("❌ Lütfen adınızı yazın!")
     
@@ -214,15 +159,14 @@ def main():
                 )
             with col2:
                 if st.button("🗑️ Sil", use_container_width=True) and player_to_remove != "Seçiniz...":
-                    st.session_state.registered_players = [
-                        p for p in st.session_state.registered_players 
-                        if p['name'] != player_to_remove
-                    ]
-                    st.session_state.registration_manager.reorder_positions(st.session_state.registered_players)
-                    # JSON'a kaydet
-                    save_players(st.session_state.registered_players)
-                    st.success(f"✅ {player_to_remove} silindi!")
-                    st.rerun()
+                    # Veritabanından sil
+                    if st.session_state.db.remove_player(player_to_remove):
+                        st.session_state.db.update_positions()
+                        st.session_state.registered_players = st.session_state.db.get_all_players()
+                        st.success(f"✅ {player_to_remove} silindi!")
+                        st.rerun()
+                    else:
+                        st.error("Silme hatası!")
     
     # Oyuncu sayıları her zaman gösterilir (kayıt olsun ya da olmasın)
     col1, col2, col3, col4 = st.columns(4)
@@ -327,8 +271,10 @@ def main():
                             else:
                                 player['team'] = "⚪"
                             break
-                    # Save to JSON
-                    save_players(st.session_state.registered_players)
+                    # Veritabanında güncelle
+                    team_value = "🟦" if "Mavi" in team_choice else "🟨" if "Sarı" in team_choice else "⚪"
+                    st.session_state.db.update_team(selected_player, team_value)
+                    st.session_state.registered_players = st.session_state.db.get_all_players()
                     st.success(f"✅ {selected_player} {team_choice} seçildi!")
                     st.rerun()
                 else:
